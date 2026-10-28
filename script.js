@@ -8,7 +8,7 @@ const TARGET_SIZE = 3;
 const MATCH_ZONE_INDICES = [6, 7, 8, 11, 12, 13, 16, 17, 18];
 const EMPTY_TILE = null;
 const STARTING_SECONDS = 60;
-const SWAP_ANIMATION_MS = 260;
+const SWAP_ANIMATION_MS = 380;
 const PUZZLE_TRANSITION_MS = 480;
 const SUCCESS_ANIMATION_MS = 1200;
 const PUZZLE_SCRAMBLE_MOVES = 100;
@@ -54,6 +54,8 @@ let remainingSeconds = STARTING_SECONDS;
 let timerInterval = null;
 let transitionTimeout = null;
 let scoreAnimationFrame = null;
+const activeSlideAnimations = new WeakMap();
+const landingEffectTimeouts = new WeakMap();
 let timerStarted = false;
 let isTransitioning = false;
 let gameOver = false;
@@ -368,11 +370,25 @@ function setStatus(message) {
   statusMessage.lastChild.textContent = ` ${message}`;
 }
 
+function getTileFocusScale(isInMatchZone) {
+  // Read CSS values so slides use the right scale on desktop and small screens.
+  const scaleProperty = isInMatchZone ? "--focus-tile-scale" : "--outer-tile-scale";
+  return Number.parseFloat(window.getComputedStyle(playerGrid).getPropertyValue(scaleProperty));
+}
+
 // Slide an adjacent colored tile into the empty position and animate its move.
 function slideTile(tileIndex, emptyIndex) {
   const tiles = Array.from(playerGrid.children);
   const oldPositions = new Map(
-    tiles.map((tile) => [tile, tile.getBoundingClientRect()]),
+    tiles.map((tile) => [
+      tile,
+      {
+        left: tile.offsetLeft,
+        top: tile.offsetTop,
+        scale: getTileFocusScale(tile.classList.contains("is-match-zone")),
+        wasInMatchZone: tile.classList.contains("is-match-zone"),
+      },
+    ]),
   );
 
   [playerPattern[tileIndex], playerPattern[emptyIndex]] =
@@ -396,18 +412,64 @@ function slideTile(tileIndex, emptyIndex) {
   if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
     tiles.forEach((tile) => {
       const before = oldPositions.get(tile);
-      const after = tile.getBoundingClientRect();
-      const offsetX = before.left - after.left;
-      const offsetY = before.top - after.top;
+      const offsetX = before.left - tile.offsetLeft;
+      const offsetY = before.top - tile.offsetTop;
+      const isInMatchZone = tile.classList.contains("is-match-zone");
+      const afterScale = getTileFocusScale(isInMatchZone);
+      const isEmptyTile = playerPattern[Number(tile.dataset.index)] === EMPTY_TILE;
 
-      if (offsetX !== 0 || offsetY !== 0) {
-        tile.animate(
-          [
-            { transform: `translate(${offsetX}px, ${offsetY}px)` },
-            { transform: "translate(0, 0)" },
-          ],
-          { duration: SWAP_ANIMATION_MS, easing: "cubic-bezier(0.2, 0.75, 0.25, 1)" },
+      if ((offsetX !== 0 || offsetY !== 0) && !isEmptyTile) {
+        // Animate position and size together, then give entering tiles a brief elastic magnetic snap.
+        activeSlideAnimations.get(tile)?.cancel();
+        window.clearTimeout(landingEffectTimeouts.get(tile));
+        landingEffectTimeouts.delete(tile);
+        tile.classList.remove("is-magnetic-land");
+        tile.classList.add("is-sliding");
+        const isEnteringMatchZone = !before.wasInMatchZone && isInMatchZone;
+        const magneticKeyframes = isEnteringMatchZone
+          ? [
+            { transform: `translate(${offsetX}px, ${offsetY}px) scale(${before.scale})` },
+            {
+              transform: `translate(${-offsetX * 0.04}px, ${-offsetY * 0.04}px) scale(1.12)`,
+              offset: 0.76,
+            },
+            { transform: `translate(0, 0) scale(${afterScale})` },
+          ]
+          : [
+            { transform: `translate(${offsetX}px, ${offsetY}px) scale(${before.scale})` },
+            {
+              transform: `translate(${offsetX * 0.04}px, ${offsetY * 0.04}px) scale(${afterScale})`,
+              offset: 0.82,
+            },
+            { transform: `translate(0, 0) scale(${afterScale})` },
+          ];
+        const animation = tile.animate(
+          magneticKeyframes,
+          {
+            duration: SWAP_ANIMATION_MS,
+            easing: isEnteringMatchZone
+              ? "cubic-bezier(0.16, 0.84, 0.24, 1)"
+              : "cubic-bezier(0.2, 0.8, 0.2, 1)",
+          },
         );
+        activeSlideAnimations.set(tile, animation);
+
+        const clearSlideState = (landed = false) => {
+          if (activeSlideAnimations.get(tile) === animation) {
+            activeSlideAnimations.delete(tile);
+            tile.classList.remove("is-sliding");
+            if (landed && isEnteringMatchZone) {
+              tile.classList.add("is-magnetic-land");
+              const timeoutId = window.setTimeout(() => {
+                tile.classList.remove("is-magnetic-land");
+                landingEffectTimeouts.delete(tile);
+              }, 560);
+              landingEffectTimeouts.set(tile, timeoutId);
+            }
+          }
+        };
+        animation.addEventListener("finish", () => clearSlideState(true), { once: true });
+        animation.addEventListener("cancel", () => clearSlideState(), { once: true });
       }
     });
   }
