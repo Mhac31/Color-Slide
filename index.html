@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#101116">
+    <title>COLOR GRID — Endless Color Match</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
+  </head>
+  <body>
+    <main class="game-shell">
+      <header class="topbar">
+        <a class="brand" href="#" aria-label="Color Grid home">
+          <span class="brand-mark" aria-hidden="true">
+            <i></i><i></i><i></i><i></i>
+          </span>
+          <span>COLOR<span class="brand-accent">GRID</span></span>
+        </a>
+        <span class="edition">ENDLESS COLOR MATCH <span aria-hidden="true">✦</span></span>
+      </header>
+
+      <section class="intro" aria-labelledby="game-title">
+        <p class="eyebrow"><span class="eyebrow-dot"></span> COLOR GRID <span class="version-label">VERSION 0.5</span></p>
+        <h1 id="game-title">Slide to <span>match.</span></h1>
+        <p class="intro-copy">Slide neighboring tiles into the empty space to match the center.</p>
+      </section>
+
+      <section class="game-card" aria-label="Color Grid puzzle">
+        <div class="game-meta">
+          <div class="puzzle-label">
+            <span class="label-icon" aria-hidden="true">▦</span>
+            <div>
+              <span class="overline">NEXT PUZZLE</span>
+              <strong>Center match <span class="round-number" id="round-number">01</span></strong>
+            </div>
+          </div>
+          <div class="stats" aria-label="Game statistics">
+            <div class="stat timer-stat" id="timer-stat">
+              <span class="overline">TIME</span>
+              <strong id="timer" aria-live="off">01:00</strong>
+            </div>
+            <span class="stat-divider" aria-hidden="true"></span>
+            <div class="stat">
+              <span class="overline">CURRENT SCORE</span>
+              <strong id="score" aria-live="polite">0</strong>
+            </div>
+            <span class="stat-divider" aria-hidden="true"></span>
+            <div class="stat best-score-stat">
+              <span class="overline">BEST SCORE</span>
+              <strong id="best-score">0</strong>
+            </div>
+            <span class="stat-divider" aria-hidden="true"></span>
+            <div class="stat">
+              <span class="overline">PUZZLES</span>
+              <strong id="puzzle-count" aria-live="polite">0</strong>
+            </div>
+            <span class="stat-divider"></span>
+            <div class="stat">
+              <span class="overline">MOVES</span>
+              <strong id="move-count" aria-live="polite">0</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="accessibility-row">
+          <label class="colorblind-toggle" for="colorblind-toggle">
+            <input id="colorblind-toggle" type="checkbox" checked>
+            <span class="toggle-track" aria-hidden="true"><span class="toggle-knob"></span></span>
+            <span class="toggle-copy">
+              <strong>Colorblind mode</strong>
+              <span>Show a symbol and letter on every tile</span>
+            </span>
+          </label>
+        </div>
+
+        <div class="boards">
+          <section class="board-section target-section" aria-labelledby="target-heading">
+            <div class="board-heading">
+              <div>
+                <h2 id="target-heading">Target pattern</h2>
+                <p>Match this pattern in the center zone</p>
+              </div>
+              <span class="board-badge">GOAL</span>
+            </div>
+            <div class="tile-grid target-grid" id="target-grid" role="group" aria-label="Target pattern"></div>
+          </section>
+
+          <div class="board-connector" aria-hidden="true"><span>↓</span></div>
+
+          <section class="board-section player-section" aria-labelledby="player-heading">
+            <div class="board-heading">
+              <div>
+                <h2 id="player-heading">Your 5 × 5 board</h2>
+                <p id="grid-hint">Slide a neighboring tile into the empty space</p>
+              </div>
+              <span class="board-badge player-badge">MATCHING ZONE</span>
+            </div>
+            <p class="matching-zone-label">MATCH THIS CENTER 3×3</p>
+            <div class="tile-grid player-grid" id="player-grid" role="group" aria-label="Your 5 by 5 sliding puzzle board. Move a tile beside the empty space. The center 3 by 3 tiles form the matching zone."></div>
+          </section>
+        </div>
+
+        <div class="game-footer">
+          <p class="status-message" id="status-message" role="status" aria-live="polite">
+            <span class="status-indicator" aria-hidden="true"></span>
+            Ready when you are. Your 60 seconds start on your first slide.
+          </p>
+        </div>
+
+        <div class="success-overlay" id="success-overlay" aria-live="polite" hidden>
+          <div class="success-content">
+            <p class="success-kicker">CENTER PATTERN CLEARED</p>
+            <h2>PERFECT MATCH!</h2>
+            <div class="success-rewards">
+              <strong>+100 POINTS</strong>
+              <span>+10 SECONDS</span>
+            </div>
+            <p class="new-high-score-banner" id="new-high-score-banner" hidden>
+              <span aria-hidden="true">★</span> NEW HIGH SCORE!
+            </p>
+          </div>
+          <div class="success-particles" id="success-particles" aria-hidden="true"></div>
+        </div>
+
+        <div class="game-over-panel" id="game-over-panel" role="dialog" aria-labelledby="game-over-title" aria-modal="true" hidden>
+          <div class="game-over-content">
+            <span class="game-over-mark" aria-hidden="true">✦</span>
+            <p class="overline">TIME'S UP</p>
+            <h2 id="game-over-title">GAME OVER</h2>
+            <div class="personal-best-banner" id="personal-best-banner" hidden>
+              <span class="trophy" aria-hidden="true">🏆</span>
+              <strong>NEW PERSONAL BEST!</strong>
+            </div>
+            <p class="game-over-copy">Great run! Here's how you did:</p>
+            <div class="final-stats">
+              <div><span>FINAL SCORE</span><strong id="final-score">0</strong></div>
+              <div><span>BEST SCORE</span><strong id="final-best-score">0</strong></div>
+              <div><span>PUZZLES</span><strong id="final-puzzles">0</strong></div>
+              <div><span>TOTAL MOVES</span><strong id="final-moves">0</strong></div>
+            </div>
+            <button class="button button-primary play-again-button" id="play-again-button" type="button">
+              <span aria-hidden="true">↻</span> Play Again
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <footer class="page-footer">
+        <span>THINK IN COLOR <span class="footer-dot">·</span> BEAT THE CLOCK</span>
+        <span class="color-legend" aria-label="Tile colors">
+          <i class="legend-dot red"></i><i class="legend-dot blue"></i>
+          <i class="legend-dot green"></i><i class="legend-dot yellow"></i>
+          <span>4 colors · 9-tile center zone</span>
+        </span>
+      </footer>
+    </main>
+  </body>
+</html>
